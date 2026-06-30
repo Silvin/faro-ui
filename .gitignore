@@ -1,0 +1,16 @@
+# Dependencias y build de Next.js
+/node_modules/
+/.next/
+/out/
+/build/
+next-env.d.ts
+
+# Entorno y secretos (¡nunca subir!)
+.env
+.env*.local
+
+# Configuración local de Claude Code
+.claude/settings.local.json
+
+# Sistema operativo
+.DS_Store
