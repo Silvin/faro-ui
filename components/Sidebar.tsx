@@ -8,10 +8,11 @@ import type { User } from '@/lib/auth';
 export function Sidebar({ user, onNavigate }: { user: User; onNavigate?: () => void }) {
   const pathname = usePathname();
 
-  const items = [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/users', label: 'Usuarios' },
-  ];
+  const items = [{ href: '/dashboard', label: 'Dashboard' }];
+  if (!user.isSuperAdmin) {
+    items.push({ href: '/categories', label: 'Categorías' });
+    items.push({ href: '/users', label: 'Usuarios' });
+  }
   if (user.isSuperAdmin) {
     items.push({ href: '/tenants/new', label: 'Nuevo negocio' });
   }
