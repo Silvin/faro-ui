@@ -10,3 +10,23 @@ body {
   background: #f4f4f2;
   color: #1a1a1a;
 }
+
+/* Impresión del ticket: solo se imprime el contenedor .ticket-print */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .ticket-print,
+  .ticket-print * {
+    visibility: visible;
+  }
+  .ticket-print {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    width: 280px;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
