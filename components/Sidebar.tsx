@@ -11,6 +11,7 @@ export function Sidebar({ user, onNavigate }: { user: User; onNavigate?: () => v
   const items = [{ href: '/dashboard', label: 'Dashboard' }];
   if (!user.isSuperAdmin) {
     items.push({ href: '/categories', label: 'Categorías' });
+    items.push({ href: '/products', label: 'Productos' });
     items.push({ href: '/users', label: 'Usuarios' });
   }
   if (user.isSuperAdmin) {
