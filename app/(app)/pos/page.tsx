@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useUser } from '@/lib/user-context';
 import { listProducts, toPesos, toCents, type Product } from '@/lib/products';
+import { listCategories, type Category } from '@/lib/categories';
+import { imageSrc } from '@/lib/uploads';
 import { createSale, listSales, getSale, type Sale } from '@/lib/sales';
 import { ApiError } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
@@ -14,6 +16,9 @@ type CartLine = { product: Product; qty: number };
 export default function PosPage() {
   const me = useUser();
   const [products, setProducts] = useState<Product[]>([]);
+  const [cats, setCats] = useState<Category[]>([]);
+  const [activeCat, setActiveCat] = useState<string>('all');
+  const [search, setSearch] = useState('');
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [paid, setPaid] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -26,8 +31,18 @@ export default function PosPage() {
       listProducts()
         .then((p) => setProducts(p.filter((x) => x.status === 'active')))
         .catch(() => setError('No se pudieron cargar los productos'));
+      listCategories()
+        .then((c) => setCats(c.filter((x) => x.status === 'active')))
+        .catch(() => {});
     }
   }, [me.isSuperAdmin]);
+
+  const filteredProducts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return products.filter(
+      (p) => (activeCat === 'all' || p.categoryId === activeCat) && (q === '' || p.name.toLowerCase().includes(q)),
+    );
+  }, [products, activeCat, search]);
 
   const lines = Object.values(cart);
   const totalCents = useMemo(() => lines.reduce((s, l) => s + l.product.priceCents * l.qty, 0), [cart]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -94,6 +109,11 @@ export default function PosPage() {
     );
   }
 
+  const tabClass = (active: boolean) =>
+    `whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium ${
+      active ? 'bg-accent text-ink' : 'bg-bg text-muted hover:text-ink'
+    }`;
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
@@ -106,21 +126,51 @@ export default function PosPage() {
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         {/* Catálogo */}
         <Card>
-          <h2 className="mb-3 text-lg font-semibold text-ink">Productos</h2>
-          {products.length === 0 ? (
-            <p className="text-sm text-muted">No hay productos activos. Crea productos primero.</p>
+          <Input
+            placeholder="Buscar producto…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="mb-3"
+          />
+          {/* Tabs de categorías */}
+          <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+            <button className={tabClass(activeCat === 'all')} onClick={() => setActiveCat('all')}>
+              Todas
+            </button>
+            {cats.map((c) => (
+              <button key={c.id} className={tabClass(activeCat === c.id)} onClick={() => setActiveCat(c.id)}>
+                {c.name}
+              </button>
+            ))}
+          </div>
+
+          {filteredProducts.length === 0 ? (
+            <p className="text-sm text-muted">No hay productos para mostrar.</p>
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {products.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => add(p)}
-                  className="rounded-md border border-line bg-surface p-3 text-left transition-colors hover:border-accent-strong"
-                >
-                  <div className="text-sm font-medium text-ink">{p.name}</div>
-                  <div className="text-xs text-muted">${toPesos(p.priceCents)}</div>
-                </button>
-              ))}
+              {filteredProducts.map((p) => {
+                const src = imageSrc(p.imageUrl);
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => add(p)}
+                    className="overflow-hidden rounded-md border border-line bg-surface text-left transition-colors hover:border-accent-strong"
+                  >
+                    <div className="flex h-20 w-full items-center justify-center bg-bg text-xs text-muted">
+                      {src ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={src} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        'Sin foto'
+                      )}
+                    </div>
+                    <div className="p-2">
+                      <div className="truncate text-sm font-medium text-ink">{p.name}</div>
+                      <div className="text-xs text-muted">${toPesos(p.priceCents)}</div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </Card>
