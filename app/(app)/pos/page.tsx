@@ -60,7 +60,13 @@ export default function PosPage() {
     if (!qtyModal) return;
     const p = qtyModal.product;
     setCart((c) => ({ ...c, [p.id]: { product: p, qty } }));
+    closeQty();
+  }
+  // Cierra el modal de cantidad y limpia el buscador (para volver a ver todos
+  // los productos sin la búsqueda anterior pegada).
+  function closeQty() {
     setQtyModal(null);
+    setSearch('');
   }
   function removeLine(p: Product) {
     setCart((c) => {
@@ -279,7 +285,7 @@ export default function PosPage() {
           product={qtyModal.product}
           initial={qtyModal.qty}
           onConfirm={confirmQty}
-          onCancel={() => setQtyModal(null)}
+          onCancel={closeQty}
         />
       )}
       {confirmDel && (
