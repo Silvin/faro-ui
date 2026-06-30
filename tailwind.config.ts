@@ -12,6 +12,8 @@ const config: Config = {
         ink: '#1A1A1A',
         muted: '#8C8C8C',
         line: '#E6E6E4',
+        danger: '#C0392B',
+        success: '#2E7D32',
       },
       borderRadius: { md: '12px', lg: '16px' },
     },

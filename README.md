@@ -27,6 +27,14 @@ npm run dev                        # http://localhost:3000
 ```
 La home hace ping a `/health` del backend para verificar la conexión HTTP.
 
+## Rutas
+- `/login` — pantalla de login (email + password).
+- `/dashboard` — home autenticado (shell BrightPOS).
+- `/users` — listar y crear usuarios del negocio.
+- `/tenants/new` — crear negocio + dueño (solo super admin global).
+
 ## Estado
-Baseline del repo. La UI de **login** (shell BrightPOS + pantalla de login + sesión)
-se construye en el incremento de frontend del módulo login (T7–T9). Ver `faro/.arete/modules/login/`.
+**Login UI construido (T7–T10):** shell BrightPOS (sidebar + topbar), pantalla de
+login con estados, guard de sesión (`/auth/me` + logout) y provisión (usuarios /
+negocios). Conectado al backend (`faro`) por HTTP con cookie de sesión.
+Build verificado (`npm run build`). Ver `faro/.arete/modules/login/`.
