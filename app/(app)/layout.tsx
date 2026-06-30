@@ -1,16 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { getMe, type User } from '@/lib/auth';
 import { UserProvider } from '@/lib/user-context';
 import { Sidebar } from '@/components/Sidebar';
 import { Topbar } from '@/components/Topbar';
 
-// Layout autenticado (T7 shell + T9 guard). Responsivo: sidebar fijo en desktop,
-// drawer con overlay en móvil.
+// Layout autenticado (T7 shell + T9 guard). El POS (/pos) se muestra a pantalla
+// completa, sin el menú lateral (es la pantalla de operación por horas).
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -27,15 +28,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
   if (!user) return null;
 
+  // Vista a pantalla completa (sin sidebar) para el punto de venta.
+  if (pathname === '/pos') {
+    return <UserProvider value={user}>{children}</UserProvider>;
+  }
+
   return (
     <UserProvider value={user}>
       <div className="flex min-h-screen">
-        {/* Sidebar fijo (desktop) */}
         <div className="hidden md:block">
           <Sidebar user={user} />
         </div>
 
-        {/* Drawer (móvil) */}
         {mobileOpen && (
           <div className="fixed inset-0 z-40 md:hidden">
             <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} aria-hidden />

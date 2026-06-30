@@ -9,18 +9,24 @@ export type SaleItem = {
   lineTotalCents: number;
 };
 
+export type PaymentMethod = 'cash' | 'card';
+
 export type Sale = {
   id: string;
   tenantId: string;
   totalCents: number;
   amountPaidCents: number;
   changeCents: number;
+  paymentMethod: PaymentMethod;
   createdAt: string;
   items?: SaleItem[];
 };
 
-export const createSale = (items: { productId: string; quantity: number }[], amountPaidCents: number) =>
-  api.post<{ sale: Sale }>('/sales', { items, amountPaidCents }).then((r) => r.sale);
+export const createSale = (
+  items: { productId: string; quantity: number }[],
+  paymentMethod: PaymentMethod,
+  amountPaidCents: number,
+) => api.post<{ sale: Sale }>('/sales', { items, paymentMethod, amountPaidCents }).then((r) => r.sale);
 
 export const listSales = () => api.get<{ items: Sale[] }>('/sales').then((r) => r.items);
 
