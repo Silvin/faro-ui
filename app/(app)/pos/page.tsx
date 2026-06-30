@@ -110,8 +110,13 @@ export default function PosPage() {
   }
 
   async function openRecent() {
+    // Ventas del día (desde las 00:00 de hoy hasta mañana 00:00, hora local).
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
     try {
-      setRecent(await listSales());
+      setRecent(await listSales({ from: start.toISOString(), to: end.toISOString() }));
     } catch {
       /* noop */
     }
@@ -146,7 +151,7 @@ export default function PosPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={openRecent}>
-            Ventas recientes
+            Ventas del día
           </Button>
           <Button variant="ghost" onClick={() => router.push('/dashboard')}>
             ☰ Menú
@@ -579,29 +584,37 @@ function TicketModal({ sale, cashier, onClose }: { sale: Sale; cashier: string; 
 }
 
 function RecentModal({ sales, onOpen, onClose }: { sales: Sale[]; onOpen: (id: string) => void; onClose: () => void }) {
+  const total = sales.reduce((s, x) => s + x.totalCents, 0);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
       <div className="relative w-full max-w-sm rounded-lg bg-surface p-5 shadow-lg">
-        <h3 className="mb-3 text-lg font-semibold text-ink">Ventas recientes</h3>
+        <h3 className="mb-3 text-lg font-semibold text-ink">Ventas de hoy</h3>
         {sales.length === 0 ? (
-          <p className="text-sm text-muted">Sin ventas todavía.</p>
+          <p className="text-sm text-muted">Sin ventas hoy.</p>
         ) : (
-          <ul className="max-h-80 divide-y divide-line overflow-auto">
-            {sales.map((s) => (
-              <li key={s.id}>
-                <button
-                  onClick={() => onOpen(s.id)}
-                  className="flex w-full items-center justify-between py-2 text-sm hover:text-accent-strong"
-                >
-                  <span className="text-muted">
-                    {new Date(s.createdAt).toLocaleTimeString()} · {s.paymentMethod === 'card' ? 'Tarjeta' : 'Efectivo'}
-                  </span>
-                  <span className="font-medium text-ink">${toPesos(s.totalCents)}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="max-h-80 divide-y divide-line overflow-auto">
+              {sales.map((s) => (
+                <li key={s.id}>
+                  <button
+                    onClick={() => onOpen(s.id)}
+                    className="flex w-full items-center justify-between py-2 text-sm hover:text-accent-strong"
+                  >
+                    <span className="text-muted">
+                      {new Date(s.createdAt).toLocaleTimeString()} ·{' '}
+                      {s.paymentMethod === 'card' ? 'Tarjeta' : 'Efectivo'}
+                    </span>
+                    <span className="font-medium text-ink">${toPesos(s.totalCents)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-2 flex items-center justify-between border-t border-line pt-3 text-base font-semibold text-ink">
+              <span>Total del día ({sales.length})</span>
+              <span>${toPesos(total)}</span>
+            </div>
+          </>
         )}
         <Button variant="ghost" className="mt-3" onClick={onClose}>
           Cerrar
