@@ -7,9 +7,11 @@ import { listProducts, toPesos, toCents, type Product } from '@/lib/products';
 import { listCategories, type Category } from '@/lib/categories';
 import { imageSrc } from '@/lib/uploads';
 import { createSale, listSales, getSale, type Sale, type PaymentMethod } from '@/lib/sales';
+import { findCustomerByPhone, createCustomer, type Customer } from '@/lib/customers';
 import { ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Avatar } from '@/components/Avatar';
 
 type CartLine = { product: Product; qty: number };
 
@@ -29,6 +31,8 @@ export default function PosPage() {
   const [recent, setRecent] = useState<Sale[] | null>(null);
   const [qtyModal, setQtyModal] = useState<{ product: Product; qty: number } | null>(null);
   const [confirmDel, setConfirmDel] = useState<Product | null>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [customerModal, setCustomerModal] = useState(false);
 
   useEffect(() => {
     if (!me.isSuperAdmin) {
@@ -80,6 +84,7 @@ export default function PosPage() {
     setPaid('');
     setError(null);
     setMethod('cash');
+    setCustomer(null);
   }
 
   const canCharge = lines.length > 0 && (method === 'card' || paidCents >= totalCents);
@@ -92,6 +97,7 @@ export default function PosPage() {
         lines.map((l) => ({ productId: l.product.id, quantity: l.qty })),
         method,
         method === 'card' ? 0 : paidCents,
+        customer?.id ?? null,
       );
       setTicket(sale);
       clearSale();
@@ -123,8 +129,7 @@ export default function PosPage() {
     return <div className="p-6 text-muted">El punto de venta es por negocio.</div>;
   }
 
-  const railItem = (a: boolean) =>
-    `rounded-lg px-3 py-2 text-left text-sm font-medium ${a ? 'bg-accent text-ink' : 'text-muted hover:bg-bg hover:text-ink'}`;
+  const railCard = (a: boolean) => `rounded-lg p-1 transition-colors ${a ? 'bg-accent' : 'hover:bg-bg'}`;
   const tabItem = (a: boolean) =>
     `whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium ${a ? 'bg-accent text-ink' : 'bg-bg text-muted'}`;
   const payBtn = (a: boolean) =>
@@ -150,15 +155,18 @@ export default function PosPage() {
       </header>
 
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-        {/* Categorías (rail, md+) */}
-        <nav className="hidden w-44 shrink-0 flex-col gap-1 overflow-y-auto border-r border-line bg-surface p-3 md:flex">
-          <p className="px-2 pb-1 text-xs font-medium uppercase tracking-wide text-muted">Categorías</p>
-          <button className={railItem(activeCat === 'all')} onClick={() => setActiveCat('all')}>
-            Todas
+        {/* Categorías (rail, md+): imagen arriba, nombre abajo */}
+        <nav className="hidden w-40 shrink-0 flex-col gap-2 overflow-y-auto border-r border-line bg-surface p-3 md:flex">
+          <p className="px-1 pb-1 text-xs font-medium uppercase tracking-wide text-muted">Categorías</p>
+          <button className={railCard(activeCat === 'all')} onClick={() => setActiveCat('all')}>
+            <div className="flex h-12 w-full items-center justify-center rounded-md bg-bg text-sm font-medium text-ink">
+              Todas
+            </div>
           </button>
           {cats.map((c) => (
-            <button key={c.id} className={railItem(activeCat === c.id)} onClick={() => setActiveCat(c.id)}>
-              {c.name}
+            <button key={c.id} className={railCard(activeCat === c.id)} onClick={() => setActiveCat(c.id)}>
+              <Avatar name={c.name} imageUrl={c.imageUrl} className="h-12 w-full rounded-md" initialsClass="text-base" />
+              <span className="mt-1 block truncate text-center text-xs text-ink">{c.name}</span>
             </button>
           ))}
         </nav>
@@ -242,6 +250,27 @@ export default function PosPage() {
             <span>${toPesos(totalCents)}</span>
           </div>
 
+          {/* Cliente (lealtad) */}
+          <div className="mt-3 rounded-lg border border-line p-2 text-sm">
+            {customer ? (
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 truncate text-ink">
+                  👤 {customer.firstName} {customer.lastName}
+                </span>
+                <button className="shrink-0 text-xs text-muted hover:text-danger" onClick={() => setCustomer(null)}>
+                  Quitar
+                </button>
+              </div>
+            ) : (
+              <button
+                className="flex w-full items-center justify-center gap-1 text-muted hover:text-ink"
+                onClick={() => setCustomerModal(true)}
+              >
+                + Asociar cliente
+              </button>
+            )}
+          </div>
+
           <p className="mb-2 mt-4 text-sm font-medium text-ink">Forma de pago</p>
           <div className="grid grid-cols-2 gap-2">
             <button className={payBtn(method === 'cash')} onClick={() => setMethod('cash')}>
@@ -291,8 +320,114 @@ export default function PosPage() {
       {confirmDel && (
         <ConfirmModal name={confirmDel.name} onConfirm={() => removeLine(confirmDel)} onCancel={() => setConfirmDel(null)} />
       )}
+      {customerModal && (
+        <CustomerModal
+          onSelect={(c) => {
+            setCustomer(c);
+            setCustomerModal(false);
+          }}
+          onClose={() => setCustomerModal(false)}
+        />
+      )}
       {ticket && <TicketModal sale={ticket} cashier={me.name} onClose={() => setTicket(null)} />}
       {recent && <RecentModal sales={recent} onOpen={openTicket} onClose={() => setRecent(null)} />}
+    </div>
+  );
+}
+
+function CustomerModal({ onSelect, onClose }: { onSelect: (c: Customer) => void; onClose: () => void }) {
+  const [phone, setPhone] = useState('');
+  const [stage, setStage] = useState<'search' | 'register'>('search');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+
+  async function search() {
+    if (!phone.trim()) return;
+    setLoading(true);
+    setError(null);
+    setInfo(null);
+    try {
+      const c = await findCustomerByPhone(phone.trim());
+      onSelect(c);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) {
+        setStage('register');
+        setInfo('Cliente nuevo. Registra sus datos para asociarlo.');
+      } else {
+        setError('No se pudo buscar el cliente.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function register() {
+    setLoading(true);
+    setError(null);
+    try {
+      const c = await createCustomer({ phone: phone.trim(), firstName, lastName });
+      onSelect(c);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'No se pudo registrar el cliente.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
+      <div className="relative w-full max-w-xs rounded-lg bg-surface p-5 shadow-lg">
+        <h3 className="mb-3 text-lg font-semibold text-ink">Cliente</h3>
+        <label htmlFor="cphone" className="block text-sm font-medium text-ink">
+          Teléfono
+        </label>
+        <Input
+          id="cphone"
+          type="tel"
+          value={phone}
+          onChange={(e) => {
+            setPhone(e.target.value);
+            setStage('search');
+          }}
+          className="mt-1"
+          autoFocus
+        />
+
+        {stage === 'register' && (
+          <div className="mt-3 space-y-2">
+            <label htmlFor="cfirst" className="block text-sm font-medium text-ink">
+              Nombre
+            </label>
+            <Input id="cfirst" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            <label htmlFor="clast" className="block text-sm font-medium text-ink">
+              Apellido
+            </label>
+            <Input id="clast" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          </div>
+        )}
+
+        {info && <p className="mt-2 text-xs text-muted">{info}</p>}
+        {error && <p className="mt-2 text-sm text-danger">{error}</p>}
+
+        <div className="mt-4 flex gap-2">
+          {stage === 'search' ? (
+            <Button className="flex-1" loading={loading} disabled={!phone.trim()} onClick={search}>
+              Buscar
+            </Button>
+          ) : (
+            <Button className="flex-1" loading={loading} disabled={!firstName.trim() || !lastName.trim()} onClick={register}>
+              Registrar y asociar
+            </Button>
+          )}
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -410,6 +545,12 @@ function TicketModal({ sale, cashier, onClose }: { sale: Sale; cashier: string; 
             <span>Pago</span>
             <span>{sale.paymentMethod === 'card' ? 'Tarjeta' : 'Efectivo'}</span>
           </div>
+          {sale.customerName && (
+            <div className="flex justify-between">
+              <span>Cliente</span>
+              <span className="truncate">{sale.customerName}</span>
+            </div>
+          )}
           {sale.paymentMethod === 'cash' && (
             <>
               <div className="flex justify-between">

@@ -18,6 +18,8 @@ export type Sale = {
   amountPaidCents: number;
   changeCents: number;
   paymentMethod: PaymentMethod;
+  customerId: string | null;
+  customerName: string | null;
   createdAt: string;
   items?: SaleItem[];
 };
@@ -26,7 +28,11 @@ export const createSale = (
   items: { productId: string; quantity: number }[],
   paymentMethod: PaymentMethod,
   amountPaidCents: number,
-) => api.post<{ sale: Sale }>('/sales', { items, paymentMethod, amountPaidCents }).then((r) => r.sale);
+  customerId?: string | null,
+) =>
+  api
+    .post<{ sale: Sale }>('/sales', { items, paymentMethod, amountPaidCents, customerId: customerId ?? null })
+    .then((r) => r.sale);
 
 export const listSales = () => api.get<{ items: Sale[] }>('/sales').then((r) => r.items);
 
