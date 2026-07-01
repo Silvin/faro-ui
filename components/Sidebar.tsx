@@ -13,6 +13,7 @@ export function Sidebar({ user, onNavigate }: { user: User; onNavigate?: () => v
     items.push({ href: '/pos', label: 'Punto de venta' });
     items.push({ href: '/categories', label: 'Categorías' });
     items.push({ href: '/products', label: 'Productos' });
+    items.push({ href: '/reports', label: 'Reportes' });
     items.push({ href: '/users', label: 'Usuarios' });
   }
   if (user.isSuperAdmin) {
