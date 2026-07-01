@@ -6,10 +6,19 @@ import { getSalesReport, type SalesReport } from '@/lib/reports';
 import { toPesos } from '@/lib/products';
 import { ApiError } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
-type Range = 'today' | 'yesterday';
+type Range = 'today' | 'yesterday' | 'custom';
 
-function rangeFor(r: Range) {
+function todayStr(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+// Rango [from, to) para hoy/ayer (medianoche local).
+function dayRange(r: 'today' | 'yesterday') {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   if (r === 'yesterday') start.setDate(start.getDate() - 1);
@@ -18,19 +27,28 @@ function rangeFor(r: Range) {
   return { from: start.toISOString(), to: end.toISOString() };
 }
 
+// Rango personalizado a partir de dos fechas 'YYYY-MM-DD' (incluye el día 'to' completo).
+function customRange(fromDate: string, toDate: string) {
+  const start = new Date(`${fromDate}T00:00:00`);
+  const end = new Date(`${toDate}T00:00:00`);
+  end.setDate(end.getDate() + 1);
+  return { from: start.toISOString(), to: end.toISOString() };
+}
+
 export default function ReportsPage() {
   const me = useUser();
   const [range, setRange] = useState<Range>('today');
+  const [customFrom, setCustomFrom] = useState(todayStr());
+  const [customTo, setCustomTo] = useState(todayStr());
   const [report, setReport] = useState<SalesReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const load = useCallback(async (r: Range) => {
+  const load = useCallback(async (r: { from: string; to: string }) => {
     setLoading(true);
     setError(null);
     try {
-      const { from, to } = rangeFor(r);
-      setReport(await getSalesReport({ from, to, tz: new Date().getTimezoneOffset() }));
+      setReport(await getSalesReport({ ...r, tz: new Date().getTimezoneOffset() }));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Error al cargar el reporte');
     } finally {
@@ -38,8 +56,9 @@ export default function ReportsPage() {
     }
   }, []);
 
+  // Hoy/Ayer cargan automáticamente; Personalizado espera al botón "Aplicar".
   useEffect(() => {
-    if (!me.isSuperAdmin) void load(range);
+    if (!me.isSuperAdmin && range !== 'custom') void load(dayRange(range));
   }, [me.isSuperAdmin, range, load]);
 
   if (me.isSuperAdmin) {
@@ -54,10 +73,11 @@ export default function ReportsPage() {
     `rounded-lg px-3 py-1.5 text-sm font-medium ${a ? 'bg-accent text-ink' : 'bg-bg text-muted'}`;
   const maxCat = Math.max(1, ...(report?.byCategory.map((c) => c.totalCents) ?? [1]));
   const maxHour = Math.max(1, ...(report?.byHour.map((h) => h.totalCents) ?? [1]));
+  const invalidCustom = customFrom > customTo;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold text-ink">Reportes</h1>
         <div className="flex gap-2">
           <button className={rangeBtn(range === 'today')} onClick={() => setRange('today')}>
@@ -66,8 +86,34 @@ export default function ReportsPage() {
           <button className={rangeBtn(range === 'yesterday')} onClick={() => setRange('yesterday')}>
             Ayer
           </button>
+          <button className={rangeBtn(range === 'custom')} onClick={() => setRange('custom')}>
+            Personalizado
+          </button>
         </div>
       </div>
+
+      {range === 'custom' && (
+        <Card>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label htmlFor="from" className="mb-1 block text-sm font-medium text-ink">
+                Desde
+              </label>
+              <Input id="from" type="date" value={customFrom} max={customTo} onChange={(e) => setCustomFrom(e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="to" className="mb-1 block text-sm font-medium text-ink">
+                Hasta
+              </label>
+              <Input id="to" type="date" value={customTo} min={customFrom} onChange={(e) => setCustomTo(e.target.value)} />
+            </div>
+            <Button disabled={invalidCustom} onClick={() => load(customRange(customFrom, customTo))}>
+              Aplicar
+            </Button>
+          </div>
+          {invalidCustom && <p className="mt-2 text-sm text-danger">La fecha "Desde" no puede ser mayor que "Hasta".</p>}
+        </Card>
+      )}
 
       {error && (
         <Card>
