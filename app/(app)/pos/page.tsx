@@ -161,7 +161,7 @@ export default function PosPage() {
 
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
         {/* Categorías (rail, md+): imagen arriba, nombre abajo */}
-        <nav className="hidden w-32 shrink-0 flex-col gap-2 overflow-y-auto border-r border-line bg-surface p-2 md:flex">
+        <nav className="hidden w-24 shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-line bg-surface p-2 md:flex">
           <p className="px-1 pb-1 text-xs font-medium uppercase tracking-wide text-muted">Categorías</p>
           <button className={railCard(activeCat === 'all')} onClick={() => setActiveCat('all')}>
             <div className="flex aspect-square w-full items-center justify-center rounded-md bg-bg text-sm font-medium text-ink">
@@ -175,7 +175,7 @@ export default function PosPage() {
                 imageUrl={c.imageUrl}
                 fit="contain"
                 className="aspect-square w-full rounded-md bg-bg"
-                initialsClass="text-lg"
+                initialsClass="text-base"
               />
               <span className="mt-1 block truncate text-center text-xs text-ink">{c.name}</span>
             </button>
@@ -200,7 +200,7 @@ export default function PosPage() {
               </button>
             ))}
           </div>
-          <div className="grid grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+          <div className="grid grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {filteredProducts.map((p) => {
               const src = imageSrc(p.imageUrl);
               return (
@@ -209,7 +209,7 @@ export default function PosPage() {
                   onClick={() => openQty(p)}
                   className="overflow-hidden rounded-md border border-line bg-surface text-left transition-colors hover:border-accent-strong"
                 >
-                  <div className="flex aspect-square w-full items-center justify-center bg-bg text-xs text-muted">
+                  <div className="flex aspect-[6/5] w-full items-center justify-center bg-bg text-xs text-muted">
                     {src ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={src} alt="" className="h-full w-full object-contain" />
