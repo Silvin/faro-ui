@@ -161,7 +161,7 @@ export default function PosPage() {
 
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
         {/* Categorías (rail, md+): imagen arriba, nombre abajo */}
-        <nav className="hidden w-40 shrink-0 flex-col gap-2 overflow-y-auto border-r border-line bg-surface p-3 md:flex">
+        <nav className="hidden w-32 shrink-0 flex-col gap-2 overflow-y-auto border-r border-line bg-surface p-2 md:flex">
           <p className="px-1 pb-1 text-xs font-medium uppercase tracking-wide text-muted">Categorías</p>
           <button className={railCard(activeCat === 'all')} onClick={() => setActiveCat('all')}>
             <div className="flex aspect-square w-full items-center justify-center rounded-md bg-bg text-sm font-medium text-ink">
@@ -200,7 +200,7 @@ export default function PosPage() {
               </button>
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
             {filteredProducts.map((p) => {
               const src = imageSrc(p.imageUrl);
               return (
@@ -217,9 +217,9 @@ export default function PosPage() {
                       'Sin foto'
                     )}
                   </div>
-                  <div className="p-2">
-                    <div className="truncate text-sm font-medium text-ink">{p.name}</div>
-                    <div className="text-xs text-muted">${toPesos(p.priceCents)}</div>
+                  <div className="p-1.5">
+                    <div className="truncate text-xs font-medium text-ink">{p.name}</div>
+                    <div className="text-[11px] text-muted">${toPesos(p.priceCents)}</div>
                   </div>
                 </button>
               );
