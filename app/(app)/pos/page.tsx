@@ -240,7 +240,7 @@ export default function PosPage() {
               </button>
             ))}
           </div>
-          <div className="grid min-h-0 flex-1 grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid min-h-0 flex-1 content-start grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {filteredProducts.map((p) => {
               const src = imageSrc(p.imageUrl);
               return (
