@@ -1,6 +1,6 @@
 import { ButtonHTMLAttributes } from 'react';
 
-type Variant = 'primary' | 'outline' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'outline' | 'ghost';
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -9,6 +9,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const styles: Record<Variant, string> = {
   primary: 'bg-accent text-ink hover:bg-accent-strong', // lime con texto oscuro
+  secondary: 'bg-bg text-ink border border-line hover:bg-line', // neutro (secundario)
   outline: 'bg-surface text-ink border border-line hover:bg-bg',
   ghost: 'bg-transparent text-muted hover:text-ink',
 };

@@ -15,6 +15,35 @@ import { Avatar } from '@/components/Avatar';
 
 type CartLine = { product: Product; qty: number };
 
+// Denominaciones de billete disponibles (pesos).
+const DENOMS = [10, 20, 50, 100, 200, 500];
+
+// Sugerencias de "monto recibido" a partir del total: incluye el exacto, los
+// redondeos a $50/$100, los billetes que cubren de un solo y múltiplos de $100.
+function paymentSuggestions(totalCents: number): number[] {
+  if (totalCents <= 0) return [];
+  const out = new Set<number>();
+  out.add(totalCents); // pago exacto
+  const roundUp = (stepPesos: number) => Math.ceil(totalCents / (stepPesos * 100)) * (stepPesos * 100);
+  out.add(roundUp(50));
+  out.add(roundUp(100));
+  for (const d of DENOMS) {
+    if (d * 100 >= totalCents) out.add(d * 100); // un billete que cubre
+  }
+  for (let m = 100; m <= 500; m += 100) {
+    if (m * 100 >= totalCents) out.add(m * 100); // múltiplos de $100 hasta $500
+  }
+  return [...out]
+    .filter((x) => x >= totalCents)
+    .sort((a, b) => a - b)
+    .slice(0, 6);
+}
+
+// Formatea un monto en centavos: sin decimales si es entero.
+function fmtAmount(cents: number): string {
+  return cents % 100 === 0 ? String(cents / 100) : (cents / 100).toFixed(2);
+}
+
 export default function PosPage() {
   const me = useUser();
   const router = useRouter();
@@ -57,6 +86,7 @@ export default function PosPage() {
   const totalCents = useMemo(() => lines.reduce((s, l) => s + l.product.priceCents * l.qty, 0), [cart]); // eslint-disable-line react-hooks/exhaustive-deps
   const paidCents = toCents(paid);
   const changeCents = paidCents - totalCents;
+  const suggestions = useMemo(() => paymentSuggestions(totalCents), [totalCents]);
 
   function openQty(p: Product) {
     setQtyModal({ product: p, qty: cart[p.id]?.qty ?? 1 });
@@ -266,9 +296,9 @@ export default function PosPage() {
             </ul>
           )}
 
-          <div className="mt-4 flex items-center justify-between text-lg font-semibold text-ink">
-            <span>Total</span>
-            <span>${toPesos(totalCents)}</span>
+          <div className="mt-4 flex items-center justify-between rounded-lg bg-accent/25 px-4 py-2">
+            <span className="text-sm font-medium uppercase tracking-wide text-ink">Total</span>
+            <span className="text-2xl font-bold text-ink">${toPesos(totalCents)}</span>
           </div>
 
           {/* Cliente (lealtad) */}
@@ -304,8 +334,26 @@ export default function PosPage() {
 
           {method === 'cash' && (
             <div className="mt-3 space-y-2">
-              <label htmlFor="paid" className="block text-sm font-medium text-ink">
-                Monto recibido
+              <p className="text-sm font-medium text-ink">Monto recibido</p>
+              {suggestions.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {suggestions.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setPaid(String(c / 100))}
+                      className={`rounded-lg border px-2 py-2 text-sm font-semibold transition-colors ${
+                        paidCents === c
+                          ? 'border-accent-strong bg-accent text-ink'
+                          : 'border-line bg-bg text-ink hover:border-accent-strong'
+                      }`}
+                    >
+                      ${fmtAmount(c)}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <label htmlFor="paid" className="block text-xs text-muted">
+                …u otro monto:
               </label>
               <Input
                 id="paid"
@@ -336,7 +384,7 @@ export default function PosPage() {
             Cobrar
           </Button>
           {lines.length > 0 && (
-            <Button variant="ghost" className="mt-2 w-full" onClick={resetSale}>
+            <Button variant="secondary" className="mt-2 w-full" onClick={resetSale}>
               Cancelar venta
             </Button>
           )}
