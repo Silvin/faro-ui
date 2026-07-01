@@ -30,11 +30,13 @@ export function Avatar({
   imageUrl,
   className = '',
   initialsClass = 'text-xs',
+  fit = 'cover',
 }: {
   name: string;
   imageUrl?: string | null;
   className?: string;
   initialsClass?: string;
+  fit?: 'cover' | 'contain'; // 'contain' = imagen completa; 'cover' = rellena y recorta
 }) {
   const src = imageSrc(imageUrl ?? undefined);
   const [failed, setFailed] = useState(false);
@@ -47,7 +49,9 @@ export function Avatar({
   // Si hay imagen y carga bien, se muestra; si falla (404/rota), cae a iniciales.
   if (src && !failed) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt="" onError={() => setFailed(true)} className={`object-cover ${className}`} />;
+    return (
+      <img src={src} alt="" onError={() => setFailed(true)} className={`${fit === 'contain' ? 'object-contain' : 'object-cover'} ${className}`} />
+    );
   }
 
   return (

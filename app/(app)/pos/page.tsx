@@ -164,13 +164,19 @@ export default function PosPage() {
         <nav className="hidden w-40 shrink-0 flex-col gap-2 overflow-y-auto border-r border-line bg-surface p-3 md:flex">
           <p className="px-1 pb-1 text-xs font-medium uppercase tracking-wide text-muted">Categorías</p>
           <button className={railCard(activeCat === 'all')} onClick={() => setActiveCat('all')}>
-            <div className="flex h-12 w-full items-center justify-center rounded-md bg-bg text-sm font-medium text-ink">
+            <div className="flex aspect-square w-full items-center justify-center rounded-md bg-bg text-sm font-medium text-ink">
               Todas
             </div>
           </button>
           {cats.map((c) => (
             <button key={c.id} className={railCard(activeCat === c.id)} onClick={() => setActiveCat(c.id)}>
-              <Avatar name={c.name} imageUrl={c.imageUrl} className="h-12 w-full rounded-md" initialsClass="text-base" />
+              <Avatar
+                name={c.name}
+                imageUrl={c.imageUrl}
+                fit="contain"
+                className="aspect-square w-full rounded-md bg-bg"
+                initialsClass="text-lg"
+              />
               <span className="mt-1 block truncate text-center text-xs text-ink">{c.name}</span>
             </button>
           ))}
@@ -203,10 +209,10 @@ export default function PosPage() {
                   onClick={() => openQty(p)}
                   className="overflow-hidden rounded-md border border-line bg-surface text-left transition-colors hover:border-accent-strong"
                 >
-                  <div className="flex h-20 w-full items-center justify-center bg-bg text-xs text-muted">
+                  <div className="flex aspect-square w-full items-center justify-center bg-bg text-xs text-muted">
                     {src ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={src} alt="" className="h-full w-full object-cover" />
+                      <img src={src} alt="" className="h-full w-full object-contain" />
                     ) : (
                       'Sin foto'
                     )}
@@ -457,7 +463,7 @@ function QuantityModal({
         <div className="mx-auto mb-2 flex h-20 w-20 items-center justify-center overflow-hidden rounded-md border border-line bg-bg text-xs text-muted">
           {src ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={src} alt="" className="h-full w-full object-cover" />
+            <img src={src} alt="" className="h-full w-full object-contain" />
           ) : (
             'Sin foto'
           )}
