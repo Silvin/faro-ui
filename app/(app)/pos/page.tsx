@@ -183,7 +183,7 @@ export default function PosPage() {
     }`;
 
   return (
-    <div className="flex h-screen flex-col bg-bg">
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-bg">
       <header className="flex items-center justify-between border-b border-line bg-surface px-4 py-3">
         <div className="text-xl font-bold text-ink">
           Faro<span className="text-accent-strong">.</span>{' '}
@@ -199,9 +199,9 @@ export default function PosPage() {
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
         {/* Categorías (rail, md+): imagen arriba, nombre abajo */}
-        <nav className="hidden w-24 shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-line bg-surface p-2 md:flex">
+        <nav className="hidden min-h-0 w-24 shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-line bg-surface p-2 md:flex">
           <p className="px-1 pb-1 text-xs font-medium uppercase tracking-wide text-muted">Categorías</p>
           <button className={railCard(activeCat === 'all')} onClick={() => setActiveCat('all')}>
             <div className="flex aspect-square w-full items-center justify-center rounded-md bg-bg text-sm font-medium text-ink">
@@ -223,7 +223,7 @@ export default function PosPage() {
         </nav>
 
         {/* Productos */}
-        <section className="flex flex-1 flex-col overflow-hidden p-4">
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-4">
           <Input
             placeholder="Buscar producto…"
             value={search}
@@ -240,7 +240,7 @@ export default function PosPage() {
               </button>
             ))}
           </div>
-          <div className="grid grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid min-h-0 flex-1 grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {filteredProducts.map((p) => {
               const src = imageSrc(p.imageUrl);
               return (
@@ -269,7 +269,7 @@ export default function PosPage() {
         </section>
 
         {/* Carrito / cobro */}
-        <aside className="flex w-full shrink-0 flex-col overflow-y-auto border-t border-line bg-surface p-4 md:w-96 md:border-l md:border-t-0">
+        <aside className="flex min-h-0 w-full shrink-0 flex-col overflow-y-auto border-t border-line bg-surface p-4 md:w-96 md:border-l md:border-t-0">
           <h2 className="mb-3 text-lg font-semibold text-ink">Venta</h2>
           {lines.length === 0 ? (
             <p className="text-sm text-muted">Toca un producto para agregarlo…</p>
