@@ -33,6 +33,7 @@ export default function PosPage() {
   const [confirmDel, setConfirmDel] = useState<Product | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [customerModal, setCustomerModal] = useState(false);
+  const [afterSale, setAfterSale] = useState(false);
 
   useEffect(() => {
     if (!me.isSuperAdmin) {
@@ -87,6 +88,13 @@ export default function PosPage() {
     setCustomer(null);
   }
 
+  // Deja el POS como al inicio: sin venta y con la categoría en "Todas".
+  function resetSale() {
+    clearSale();
+    setSearch('');
+    setActiveCat('all');
+  }
+
   const canCharge = lines.length > 0 && (method === 'card' || paidCents >= totalCents);
 
   async function charge() {
@@ -99,6 +107,7 @@ export default function PosPage() {
         method === 'card' ? 0 : paidCents,
         customer?.id ?? null,
       );
+      setAfterSale(true);
       setTicket(sale);
       clearSale();
     } catch (e) {
@@ -123,6 +132,7 @@ export default function PosPage() {
   }
   async function openTicket(id: string) {
     try {
+      setAfterSale(false);
       setTicket(await getSale(id));
       setRecent(null);
     } catch {
@@ -297,7 +307,15 @@ export default function PosPage() {
               <label htmlFor="paid" className="block text-sm font-medium text-ink">
                 Monto recibido
               </label>
-              <Input id="paid" type="number" step="0.01" min="0" value={paid} onChange={(e) => setPaid(e.target.value)} />
+              <Input
+                id="paid"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                value={paid}
+                onChange={(e) => setPaid(e.target.value)}
+              />
               <div className="rounded-lg bg-bg p-4 text-center">
                 <div className="text-sm text-muted">Cambio</div>
                 <div className={`text-4xl font-bold ${changeCents >= 0 ? 'text-success' : 'text-danger'}`}>
@@ -317,6 +335,11 @@ export default function PosPage() {
           <Button className="mt-4 w-full" loading={submitting} disabled={!canCharge} onClick={charge}>
             Cobrar
           </Button>
+          {lines.length > 0 && (
+            <Button variant="ghost" className="mt-2 w-full" onClick={resetSale}>
+              Cancelar venta
+            </Button>
+          )}
         </aside>
       </div>
 
@@ -340,7 +363,18 @@ export default function PosPage() {
           onClose={() => setCustomerModal(false)}
         />
       )}
-      {ticket && <TicketModal sale={ticket} cashier={me.name} onClose={() => setTicket(null)} />}
+      {ticket && (
+        <TicketModal
+          sale={ticket}
+          cashier={me.name}
+          onClose={() => {
+            // Al cerrar el ticket de una venta, deja el POS como al inicio.
+            if (afterSale) resetSale();
+            setTicket(null);
+            setAfterSale(false);
+          }}
+        />
+      )}
       {recent && <RecentModal sales={recent} onOpen={openTicket} onClose={() => setRecent(null)} />}
     </div>
   );
@@ -399,6 +433,7 @@ function CustomerModal({ onSelect, onClose }: { onSelect: (c: Customer) => void;
         <Input
           id="cphone"
           type="tel"
+          inputMode="numeric"
           value={phone}
           onChange={(e) => {
             setPhone(e.target.value);
